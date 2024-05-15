@@ -25,18 +25,22 @@
     UIColor *color = [unarchiver decodeObjectForKey:NSKeyedArchiveRootObjectKey];
     self.selectedColor = color;
 
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad && UIInterfaceOrientationIsLandscape(self.interfaceOrientation)) {
-        CGRect screenRect = [[UIScreen mainScreen] bounds];
-        CGFloat screenWidth = screenRect.size.width;
-        if (screenWidth == 1024 || screenWidth == 1112) {
-            self.view.transform = CGAffineTransformMakeScale(0.7, 0.7);
-        }
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        CGFloat scale = MIN(self.view.bounds.size.width / 768, self.view.bounds.size.height / 1024);
+        self.view.transform = CGAffineTransformMakeScale(scale, scale);
     }
 }
 
-- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
-    [super traitCollectionDidChange:previousTraitCollection];
-    [self loadView];
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad && UIInterfaceOrientationIsLandscape(self.interfaceOrientation)) {
+        CGFloat scale = MIN(size.width / 768, size.height / 1024);
+        [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+            self.view.transform = CGAffineTransformMakeScale(scale, scale);
+        } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        }];
+    }
 }
 
 @end

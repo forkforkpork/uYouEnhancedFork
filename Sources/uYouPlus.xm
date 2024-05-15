@@ -1,5 +1,4 @@
 #import "uYouPlus.h"
-#import "RootOptionsController.h"
 
 // Tweak's bundle for Localizations support - @PoomSmart - https://github.com/PoomSmart/YouPiP/commit/aea2473f64c75d73cab713e1e2d5d0a77675024f
 NSBundle *uYouPlusBundle() {
@@ -79,74 +78,115 @@ static int contrastMode() {
 }
 %end
 
-// Enable Alternate Icons
+// Enable Alternate Icons - @arichornlover
 %hook UIApplication
 - (BOOL)supportsAlternateIcons {
     return YES;
 }
 %end
 
-%group uYouAdBlockingWorkaround
-// Workaround: uYou 3.0.3 Adblock fix - @PoomSmart
-%hook YTAdsInnerTubeContextDecorator
-- (void)decorateContext:(id)context {
-if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {}
+// uYou AdBlocking Workaround LITE (This Version only removes ads from Videos/Shorts) - @PoomSmart
+%group uYouAdBlockingWorkaroundLite
+%hook YTReelInfinitePlaybackDataSource
+- (void)setReels:(NSMutableOrderedSet <YTReelModel *> *)reels {
+    [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelModel *obj, NSUInteger idx, BOOL *stop) {
+        return [obj respondsToSelector:@selector(videoType)] ? obj.videoType == 3 : NO;
+    }]];
+    %orig;
 }
+%end
+
+%hook YTAdsInnerTubeContextDecorator
+- (void)decorateContext:(id)context {}
 %end
 
 %hook YTAccountScopedAdsInnerTubeContextDecorator
-- (void)decorateContext:(id)context {
-if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {}
-}
+- (void)decorateContext:(id)context {}
 %end
-BOOL isAd(YTIElementRenderer *self) {
-    if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {
-        if (self != nil) {
-            NSString *description = [self description];
-            if ([description containsString:@"brand_promo"]
-                || [description containsString:@"statement_banner"]
-                || [description containsString:@"product_carousel"]
-                || [description containsString:@"product_engagement_panel"]
-                || [description containsString:@"product_item"]
-                || [description containsString:@"expandable_list"]
-                || [description containsString:@"text_search_ad"]
-                || [description containsString:@"text_image_button_layout"]
-                || [description containsString:@"carousel_headered_layout"]
-                || [description containsString:@"carousel_footered_layout"]
-                || [description containsString:@"square_image_layout"]
-                || [description containsString:@"landscape_image_wide_button_layout"]
-                || [description containsString:@"feed_ad_metadata"])
-                return YES;
-        }
-    }
-    return NO;
-}
+%end
 
-%hook YTSectionListViewController
-- (void)loadWithModel:(YTISectionListRenderer *)model {
+// uYou AdBlocking Workaround (for uYou Option) - @PoomSmart
+%group uYouAdBlockingWorkaround
+// Workaround: uYou 3.0.3 Adblock fix - @PoomSmart
+%hook YTReelInfinitePlaybackDataSource
+- (void)setReels:(NSMutableOrderedSet <YTReelModel *> *)reels {
     if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {
-        NSMutableArray <YTISectionListSupportedRenderers *> *contentsArray = model.contentsArray;
-        NSIndexSet *removeIndexes = [contentsArray indexesOfObjectsPassingTest:^BOOL(YTISectionListSupportedRenderers *renderers, NSUInteger idx, BOOL *stop) {
-            YTIItemSectionRenderer *sectionRenderer = renderers.itemSectionRenderer;
-            YTIItemSectionSupportedRenderers *firstObject = [sectionRenderer.contentsArray firstObject];
-            return firstObject.hasPromotedVideoRenderer || firstObject.hasCompactPromotedVideoRenderer || firstObject.hasPromotedVideoInlineMutedRenderer || isAd(firstObject.elementRenderer);
-        }];
-        [contentsArray removeObjectsAtIndexes:removeIndexes];
+        [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelModel *obj, NSUInteger idx, BOOL *stop) {
+            return [obj respondsToSelector:@selector(videoType)] ? obj.videoType == 3 : NO;
+        }]];
     }
     %orig;
 }
 %end
 
-%hook YTWatchNextResultsViewController
-- (void)loadWithModel:(YTISectionListRenderer *)watchNextResults {
+%hook YTAdsInnerTubeContextDecorator
+- (void)decorateContext:(id)context {
+    if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {}
+}
+%end
+
+%hook YTAccountScopedAdsInnerTubeContextDecorator
+- (void)decorateContext:(id)context {
+    if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {}
+}
+%end
+
+BOOL isAdString(NSString *description) {
+    if ([description containsString:@"brand_promo"]
+        || [description containsString:@"carousel_footered_layout"]
+        || [description containsString:@"carousel_headered_layout"]
+        || [description containsString:@"feed_ad_metadata"]
+        || [description containsString:@"full_width_portrait_image_layout"]
+        || [description containsString:@"full_width_square_image_layout"]
+        || [description containsString:@"home_video_with_context"]
+        || [description containsString:@"landscape_image_wide_button_layout"]
+        // || [description containsString:@"product_carousel"]
+        || [description containsString:@"product_engagement_panel"]
+        || [description containsString:@"product_item"]
+        || [description containsString:@"shelf_header"]
+        // || [description containsString:@"statement_banner"]
+        || [description containsString:@"square_image_layout"] // install app ad
+        || [description containsString:@"text_image_button_layout"]
+        || [description containsString:@"text_search_ad"]
+        || [description containsString:@"video_display_full_buttoned_layout"])
+        return YES;
+    return NO;
+}
+
+NSData *cellDividerData;
+
+%hook YTIElementRenderer
+- (NSData *)elementData {
+    NSString *description = [self description];
+    if ([description containsString:@"cell_divider"]) {
+        if (!cellDividerData) cellDividerData = %orig;
+        return cellDividerData;
+    }
+    if ([self respondsToSelector:@selector(hasCompatibilityOptions)] && self.hasCompatibilityOptions && self.compatibilityOptions.hasAdLoggingData) return cellDividerData;
+    // if (isAdString(description)) return cellDividerData;
+    return %orig;
+}
+%end
+
+%hook YTInnerTubeCollectionViewController
+- (void)loadWithModel:(YTISectionListRenderer *)model {
     if ([NSUserDefaults.standardUserDefaults boolForKey:@"removeYouTubeAds"]) {
-        NSMutableArray <YTISectionListSupportedRenderers *> *contentsArray = watchNextResults.contentsArray;
-        NSIndexSet *removeIndexes = [contentsArray indexesOfObjectsPassingTest:^BOOL(YTISectionListSupportedRenderers *renderers, NSUInteger idx, BOOL *stop) {
-            YTIItemSectionRenderer *sectionRenderer = renderers.itemSectionRenderer;
-            YTIItemSectionSupportedRenderers *firstObject = [sectionRenderer.contentsArray firstObject];
-            return firstObject.hasPromotedVideoRenderer || firstObject.hasCompactPromotedVideoRenderer || firstObject.hasPromotedVideoInlineMutedRenderer || isAd(firstObject.elementRenderer);
-        }];
-        [contentsArray removeObjectsAtIndexes:removeIndexes];
+        if ([model isKindOfClass:%c(YTISectionListRenderer)]) {
+            NSMutableArray <YTISectionListSupportedRenderers *> *contentsArray = model.contentsArray;
+            NSIndexSet *removeIndexes = [contentsArray indexesOfObjectsPassingTest:^BOOL(YTISectionListSupportedRenderers *renderers, NSUInteger idx, BOOL *stop) {
+                if (![renderers isKindOfClass:%c(YTISectionListSupportedRenderers)])
+                    return NO;
+                YTIItemSectionRenderer *sectionRenderer = renderers.itemSectionRenderer;
+                YTIItemSectionSupportedRenderers *firstObject = [sectionRenderer.contentsArray firstObject];
+                YTIElementRenderer *elementRenderer = firstObject.elementRenderer;
+                NSString *description = [elementRenderer description];
+                return isAdString(description)
+                    || [description containsString:@"post_shelf"]
+                    || [description containsString:@"product_carousel"]
+                    || [description containsString:@"statement_banner"];
+            }];
+            [contentsArray removeObjectsAtIndexes:removeIndexes];
+        }
     }
     %orig;
 }
@@ -237,6 +277,18 @@ BOOL isAd(YTIElementRenderer *self) {
 - (BOOL)respectDeviceCaptionSetting { return NO; } // YouRememberCaption: https://poomsmart.github.io/repo/depictions/youremembercaption.html
 - (BOOL)isLandscapeEngagementPanelSwipeRightToDismissEnabled { return YES; } // Swipe right to dismiss the right panel in fullscreen mode
 - (BOOL)enableModularPlayerBarController { return NO; } // fixes some of the iSponorBlock problems
+%end
+
+// Fix Casting: https://github.com/arichornlover/uYouEnhanced/issues/606#issuecomment-2098289942
+%group gFixCasting
+%hook YTColdConfig
+- (BOOL)cxClientEnableIosLocalNetworkPermissionReliabilityFixes { return YES; }
+- (BOOL)cxClientEnableIosLocalNetworkPermissionUsingSockets { return NO; }
+- (BOOL)cxClientEnableIosLocalNetworkPermissionWifiFixes { return YES; }
+%end
+%hook YTHotConfig
+- (BOOL)isPromptForLocalNetworkPermissionsEnabled { return YES; }
+%end
 %end
 
 // NOYTPremium - https://github.com/PoomSmart/NoYTPremium/
@@ -445,35 +497,24 @@ BOOL isAd(YTIElementRenderer *self) {
 - (BOOL)enablePlayerBarForVerticalVideoWhenControlsHiddenInFullscreen { return YES; }
 %end
 
-// YTNoTracking - @arichornlover - https://github.com/arichornlover/YTNoTracking/ - OUTDATED
-%hook UIApplication
-- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
-    NSString *originalURLString = [url absoluteString];
-    NSString *modifiedURLString = originalURLString;
-    if ([modifiedURLString isEqualToString:originalURLString]) {
-        modifiedURLString = [modifiedURLString stringByReplacingOccurrencesOfString:@"&si=[a-zA-Z0-9_-]+" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, modifiedURLString.length)];
-    }
-    NSURL *modifiedURL = [NSURL URLWithString:modifiedURLString];
-    BOOL result = %orig(application, modifiedURL, options);
-    return result;
-}
-%end
-
-%hook YTICompactLinkRenderer
-+ (BOOL)hasTrackingParams {
-    return NO;
-}
-%end
-
-%hook YTIReelPlayerOverlayRenderer
-+ (BOOL)hasTrackingParams {
-    return NO;
-}
-%end
-
-%hook YTIShareTargetServiceUpdateRenderer
-+ (BOOL)hasTrackingParams {
-    return NO;
+// YTNoTracking - @arichornlover - https://github.com/arichornlover/YTNoTracking/
+%hook UIPasteboard
+- (void)setString:(NSString *)string {
+    // Check if the shared string is a YouTube URL
+    if ([string containsString:@"youtu"]) {
+        NSError *error = NULL;
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"youtu\\.be\\/(\\w+)" options:NSRegularExpressionCaseInsensitive error:&error];
+        NSArray *matches = [regex matchesInString:string options:0 range:NSMakeRange(0, [string length])]; 
+        for (NSTextCheckingResult *match in matches) {
+            NSRange videoIDRange = [match rangeAtIndex:1];
+            NSString *videoID = [string substringWithRange:videoIDRange];
+            NSRange timeRange = [string rangeOfString:@"t=" options:NSBackwardsSearch];
+            NSString *sanitizedURL = [NSString stringWithFormat:@"https://youtu.be/%@%@", videoID, [string substringFromIndex:timeRange.location]];
+            %orig(sanitizedURL);
+            return;
+        }
+    } 
+    %orig(string);
 }
 %end
 
@@ -951,14 +992,34 @@ BOOL isAd(YTIElementRenderer *self) {
 %end
 
 // Always use remaining time in the video player - @bhackel
-%hook YTInlinePlayerBarContainerView
-// Modify constructor to enable the feature when it is done
-- (instancetype)init {
-    YTInlinePlayerBarContainerView *playerBar = (YTInlinePlayerBarContainerView *)%orig;
-    if (playerBar && IS_ENABLED(@"alwaysShowRemainingTime_enabled")) {
-        playerBar.shouldDisplayTimeRemaining = YES;
+%hook YTPlayerBarController
+// When a new video is played, enable time remaining flag
+- (void)setActiveSingleVideo:(id)arg1 {
+    %orig;
+    if (IS_ENABLED(@"alwaysShowRemainingTime_enabled")) {
+        // Get the player bar view
+        YTInlinePlayerBarContainerView *playerBar = self.playerBar;
+        if (playerBar) {
+            // Enable the time remaining flag
+            playerBar.shouldDisplayTimeRemaining = YES;
+        }
     }
-    return playerBar;
+}
+%end
+
+// Disable toggle time remaining - @bhackel
+%hook YTInlinePlayerBarContainerView
+- (void)setShouldDisplayTimeRemaining:(BOOL)arg1 {
+    if (IS_ENABLED(@"disableRemainingTime_enabled")) {
+        // Set true if alwaysShowRemainingTime
+        if (IS_ENABLED(@"alwaysShowRemainingTime_enabled")) {
+            %orig(YES);
+        } else {
+            %orig(NO);
+        }
+        return;
+    }
+    %orig;
 }
 %end
 
@@ -975,7 +1036,7 @@ BOOL isAd(YTIElementRenderer *self) {
 %end
 
 // Hide Video Title (in Fullscreen) - @arichornlover
-%hook YTMainAppVideoPlayerOverlayView
+%hook YTMainAppControlsOverlayView
 - (BOOL)titleViewHidden {
     return IS_ENABLED(@"hideVideoTitle_enabled") ? YES : %orig;
 }
@@ -1593,6 +1654,9 @@ static BOOL findCell(ASNodeController *nodeController, NSArray <NSString *> *ide
     if (IS_ENABLED(@"disablePullToFull_enabled")) {
         %init(gDisablePullToFull);
     }
+    if (IS_ENABLED(@"uYouAdBlockingWorkaroundLite_enabled")) {
+        %init(uYouAdBlockingWorkaroundLite);
+    }
     if (IS_ENABLED(@"uYouAdBlockingWorkaround_enabled")) {
         %init(uYouAdBlockingWorkaround);
     }
@@ -1601,6 +1665,9 @@ static BOOL findCell(ASNodeController *nodeController, NSArray <NSString *> *ide
     }
     if (IS_ENABLED(@"hideDoubleTapToSeekOverlay_enabled")) {
         %init(gHideDoubleTapToSeekOverlay);
+    }
+    if (IS_ENABLED(@"fixCasting_enabled")) {
+        %init(gFixCasting);
     }
 
     // YTNoModernUI - @arichorn
@@ -1639,6 +1706,10 @@ static BOOL findCell(ASNodeController *nodeController, NSArray <NSString *> *ide
     if (![allKeys containsObject:@"YouPiPEnabled"]) { 
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"YouPiPEnabled"]; 
     }
+    if (![allKeys containsObject:@"uYouAdBlockingWorkaroundLite_enabled"]) { 
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"uYouAdBlockingWorkaroundLite_enabled"]; 
+        [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"removeYouTubeAds"]; 
+    }
     if (![allKeys containsObject:@"uYouAdBlockingWorkaround_enabled"]) { 
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"uYouAdBlockingWorkaround_enabled"]; 
     }
@@ -1651,5 +1722,9 @@ static BOOL findCell(ASNodeController *nodeController, NSArray <NSString *> *ide
     // Set default to disabled
     if (![allKeys containsObject:@"showPlaybackRate"]) { 
         [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"showPlaybackRate"]; 
+    }
+    // Set video casting fix default to enabled
+    if (![allKeys containsObject:@"fixCasting_enabled"]) { 
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"fixCasting_enabled"]; 
     }
 }
