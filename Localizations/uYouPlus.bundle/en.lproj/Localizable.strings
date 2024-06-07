@@ -151,6 +151,12 @@
 "COPY_SETTINGS_DESC" = "Copy all current settings to the clipboard";
 "PASTE_SETTINGS" = "Paste Settings";
 "PASTE_SETTINGS_DESC" = "Paste settings from clipboard and apply";
+"EXPORT_SETTINGS" = "Export Settings";
+"EXPORT_SETTINGS_DESC" = "Exports all current settings into a .txt file";
+"IMPORT_SETTINGS" = "Import Settings";
+"IMPORT_SETTINGS_DESC" = "Press to import settings (.txt)";
+"REPLACE_COPY_AND_PASTE_BUTTONS" = "Replace 'Copy Settings' & 'Paste Settings' Buttons";
+"REPLACE_COPY_AND_PASTE_BUTTONS_DESC" = "Replaces the Buttons to 'Export Settings' and 'Import Settings'";
 
 "UYOUENHANCED_ESSENTIAL_MENU" = "uYouEnhanced Essential Menu";
 "CHANGE_APP_ICON" = "Change App Icon";
@@ -202,6 +208,11 @@
 "HIDE_SUGGESTED_VIDEOS_IN_FULLSCREEN_DESC" = "Hide the suggested videos whenever in the Fullscreen Video Player. App restart is required.";
 "HIDE_ALL_VIDEOS_UNDER_PLAYER" = "Hide all videos under player";
 "HIDE_ALL_VIDEOS_UNDER_PLAYER_DESC" = "Remove all videos under the video player. Depends on which Device Orientation.";
+
+"SHORTS_QUALITY_PICKER" = "Shorts Quality Picker";
+"SHORTS_QUALITY_PICKER_DESC" = "Enables the YouTube Shorts Quality Picker";
+
+"VIDEO_PLAYER_BUTTON_OPTIONS" = "Video Player Button Options";
 
 "RED_SUBSCRIBE_BUTTON" = "Red Subscribe Button";
 "RED_SUBSCRIBE_BUTTON_DESC" = "Restores the Subscribe Button Color to be Red.";
@@ -262,10 +273,11 @@
 "ADBLOCK_WORKAROUND" = "AdBlock Workaround";
 "ADBLOCK_WORKAROUND_DESC" = "Uses stronger adblocking code.";
 "FAKE_PREMIUM" = "Fake Premium";
-"FAKE_PREMIUM_DESC" = "Uses Premium logo and creates fake buttons in the You tab.";
+"FAKE_PREMIUM_DESC" = "Uses Premium logo and creates fake buttons in the You tab. Will disable animated YouTube logo.";
 "FAKE_PREMIUM_WARNING" = "The *You* Tab doesn't exist in v%@, fake buttons will not be created.\nBut the *Fake Premium Logo* will still work.";
 "FAKE_YOUR_PREMIUM_BENEFITS" = "Your Premium benefits";
 "FAKE_DOWNLOADS" = "Downloads";
+"DISABLE_ANIMATED_YOUTUBE_LOGO" = "Disable Animated YouTube Logo";
 "CENTER_YOUTUBE_LOGO" = "Center YouTube Logo";
 "CENTER_YOUTUBE_LOGO_DESC" = "Toggle this to reposition the official YouTube Logo to the Center. App restart is required.";
 "HIDE_YOUTUBE_LOGO" = "Hide YouTube Logo";
@@ -276,10 +288,14 @@
 "HIDE_COMMUNITY_POSTS_DESC" = "Hides the Community Posts. App restart is required.";
 "HIDE_HEADER_LINKS_UNDER_PROFILE" = "Hide Header Links under channel profile";
 "HIDE_HEADER_LINKS_UNDER_PROFILE_DESC" = "Hides the Header Links under any channel profile.";
+"AUTO_HIDE_HOME_INDICATOR" = "Auto-Hide Home Indicator";
+"AUTO_HIDE_HOME_INDICATOR_DESC" = "Automatically Hides the iOS Home Indicator when not interacting with the App.";
 "HIDE_INDICATORS" = "Hide Indicators";
 "HIDE_INDICATORS_DESC" = "Hides all Indicators that are currently in the App.";
 "FIX_CASTING" = "Fix Casting";
 "FIX_CASTING_DESC" = "Changes certain A/B flags to fix casting.";
+"NEW_SETTINGS_UI" = "Use New Settings UI";
+"NEW_SETTINGS_UI_DESC" = "Enables the new Settings UI with tweak categories.";
 
 "DEFAULT" = "Default";
 "CUSTOM_COLOR" = "Custom Color";
